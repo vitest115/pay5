@@ -5,7 +5,7 @@
     <meta name="viewport" content="width=device-width, initial-scale=1.0">
     <title>دفع فاتورة</title>
     <style>
-        .error { color: red; }
+        .error { color: rgb(0, 51, 255); }
         .success { color: green; }
     </style>
 </head>
@@ -42,38 +42,34 @@
             // قم باستخدام CORS Anywhere لتجاوز مشكلة CORS
             const url = "https://cors-anywhere.herokuapp.com/https://00acc.com/api/createInvoice";  // مع CORS Anywhere
 
-            // بناء الـ Payload (سترسل البيانات باستخدام x-www-form-urlencoded)
-            const data = new URLSearchParams();
-            data.append('secretId', 'je4dCacsUS1hIu28wsmr');
-            data.append('price', price);
-            data.append('title', 'testpostman');
-            data.append('description', 'this is test');
-            data.append('accepts', '{"card":true,"paypal":true,"coinbase":false}');
-            data.append('acceptGuestPayment', true);
+            // بناء الـ Payload (إرسال بيانات بتنسيق JSON)
+            const payload = {
+                secretId: "je4dCacsUS1hIu28wsmr",
+                price: price,
+                title: "testpostman",
+                description: "this is test",
+                accepts: { card: true, paypal: true, coinbase: false },
+                acceptGuestPayment: true
+            };
 
-            // إرسال الطلب باستخدام fetch
+            // إرسال الطلب باستخدام fetch بتنسيق JSON
             fetch(url, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'  // تحديد أن البيانات هي x-www-form-urlencoded
+                    'Content-Type': 'application/json'  // تحديد أن البيانات هي JSON
                 },
-                body: data.toString()  // تحويل الـ data إلى string بتنسيق x-www-form-urlencoded
+                body: JSON.stringify(payload)  // تحويل الـ payload إلى JSON string
             })
-            .then(response => response.text())  // تغيير من .json() إلى .text()
-            .then(responseText => {
-                try {
-                    const responseData = JSON.parse(responseText);  // تحويل النص إلى JSON إذا كانت الاستجابة JSON
-                    console.log('استجابة API:', responseData);
-                    if (responseData.status === "done") {
-                        // إذا تم إنشاء الفاتورة بنجاح، نأخذ الـ invoiceId
-                        const invoiceId = responseData.invoiceId;
-                        getInvoiceLink(invoiceId);
-                    } else {
-                        messageDiv.innerHTML = '<p class="error">حدث خطأ أثناء إنشاء الفاتورة. حاول مرة أخرى.</p>';
-                    }
-                } catch (error) {
-                    console.error('فشل في تحويل الاستجابة إلى JSON:', error);
-                    messageDiv.innerHTML = '<p class="error">حدث خطأ أثناء معالجة الاستجابة. المحتوى غير صالح.</p>';
+            .then(response => response.json())  // تحويل الاستجابة إلى JSON
+            .then(responseData => {
+                console.log('استجابة API:', responseData);
+
+                // إذا تم إنشاء الفاتورة بنجاح
+                if (responseData.status === "done") {
+                    const invoiceId = responseData.invoiceId;
+                    getInvoiceLink(invoiceId);
+                } else {
+                    messageDiv.innerHTML = '<p class="error">حدث خطأ أثناء إنشاء الفاتورة. حاول مرة أخرى.</p>';
                 }
             })
             .catch(error => {
@@ -86,33 +82,29 @@
             // استخدام CORS Anywhere لاستعلام الرابط
             const url = "https://cors-anywhere.herokuapp.com/https://00acc.com/api/getInvoices";  // مع CORS Anywhere
 
-            // بناء الـ Payload
-            const data = new URLSearchParams();
-            data.append('secretId', 'je4dCacsUS1hIu28wsmr');
-            data.append('invoiceId', invoiceId);
+            // بناء الـ Payload لاستعلام رابط الفاتورة
+            const payload = {
+                secretId: "je4dCacsUS1hIu28wsmr",
+                invoiceId: invoiceId
+            };
 
             // استعلام رابط الدفع عبر الـ API
             fetch(url, {
                 method: 'POST',
                 headers: {
-                    'Content-Type': 'application/x-www-form-urlencoded'  // تحديد أن البيانات هي x-www-form-urlencoded
+                    'Content-Type': 'application/json'  // تحديد أن البيانات هي JSON
                 },
-                body: data.toString()  // تحويل الـ data إلى string بتنسيق x-www-form-urlencoded
+                body: JSON.stringify(payload)  // تحويل الـ payload إلى JSON string
             })
-            .then(response => response.text())  // تغيير من .json() إلى .text()
-            .then(responseText => {
-                try {
-                    const responseData = JSON.parse(responseText);  // تحويل النص إلى JSON إذا كانت الاستجابة JSON
-                    console.log('رابط الفاتورة:', responseData);
-                    if (responseData.hosted_url) {
-                        // عرض رابط الفاتورة للعميل
-                        document.getElementById('message').innerHTML = `<p class="success">رابط الدفع: <a href="${responseData.hosted_url}" target="_blank">${responseData.hosted_url}</a></p>`;
-                    } else {
-                        document.getElementById('message').innerHTML = '<p class="error">حدث خطأ أثناء استعلام الرابط. حاول مرة أخرى.</p>';
-                    }
-                } catch (error) {
-                    console.error('فشل في تحويل الاستجابة إلى JSON:', error);
-                    document.getElementById('message').innerHTML = '<p class="error">حدث خطأ أثناء معالجة الاستجابة. المحتوى غير صالح.</p>';
+            .then(response => response.json())  // تحويل الاستجابة إلى JSON
+            .then(responseData => {
+                console.log('رابط الفاتورة:', responseData);
+
+                // إذا كان هناك رابط دفع في الاستجابة
+                if (responseData.hosted_url) {
+                    document.getElementById('message').innerHTML = `<p class="success">رابط الدفع: <a href="${responseData.hosted_url}" target="_blank">${responseData.hosted_url}</a></p>`;
+                } else {
+                    document.getElementById('message').innerHTML = '<p class="error">حدث خطأ أثناء استعلام الرابط. حاول مرة أخرى.</p>';
                 }
             })
             .catch(error => {
