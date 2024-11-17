@@ -22,57 +22,62 @@
     <script>
         document.getElementById('testApiButton').addEventListener('click', function() {
             // الرابط الذي سيتم اختباره
-            const url = "https://cors-anywhere.herokuapp.com/https://00acc.com/api/createInvoice";  // مع CORS Anywhere
-            
-            // بناء البيانات (payload)
-            const payload = {
-                secretId: "je4dCacsUS1hIu28wsmr",
-                price: 10,
-                title: "testpostman",
-                description: "this is test",
-                accepts: { card: true, paypal: true, coinbase: false },
-                acceptGuestPayment: true
-            };
+   const myHeaders = new Headers();
+myHeaders.append("Content-Type", "application/json");
 
-            // إرسال الطلب باستخدام fetch
-            fetch(url, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json'
-                },
-                body: JSON.stringify(payload)
-            })
-            .then(response => {
-                // أولاً، عرض نوع الاستجابة
-                const contentType = response.headers.get('Content-Type');
-                const responseDiv = document.getElementById('responseInfo');
+const raw = JSON.stringify({
+  "secretId": "je4dCacsUS1hIu28wsmr", // تأكد من صحة الـ secretId
+  "price": 1,
+  "title": "تجربة03",
+  "description": "this is test",
+  "accepts": {
+    "card": true,
+    "paypal": true,
+    "coinbase": false
+  },
+  "acceptGuestPayment": true
+});
 
-                responseDiv.innerHTML = `<p><strong>نوع الاستجابة:</strong> ${contentType}</p>`;
+const requestOptions = {
+  method: "POST",
+  headers: myHeaders,
+  body: raw,
+  redirect: "follow"
+};
 
-                if (contentType.includes('application/json')) {
-                    // إذا كانت الاستجابة JSON، نعرضها بشكل مميز
-                    return response.json().then(data => {
-                        responseDiv.innerHTML += `<p><strong>محتوى الاستجابة (JSON):</strong> <pre>${JSON.stringify(data, null, 2)}</pre></p>`;
-                    });
-                } else if (contentType.includes('text/html')) {
-                    // إذا كانت الاستجابة HTML
-                    return response.text().then(data => {
-                        responseDiv.innerHTML += `<p><strong>محتوى الاستجابة (HTML):</strong> <pre>${data}</pre></p>`;
-                    });
-                } else if (contentType.includes('text/plain')) {
-                    // إذا كانت الاستجابة نصية
-                    return response.text().then(data => {
-                        responseDiv.innerHTML += `<p><strong>محتوى الاستجابة (نص عادي):</strong> <pre>${data}</pre></p>`;
-                    });
-                } else {
-                    responseDiv.innerHTML += `<p class="error">استجابة غير متوقعة من الخادم.</p>`;
-                    return Promise.reject("استجابة غير متوقعة");
-                }
-            })
-            .catch(error => {
-                // في حالة حدوث أي خطأ
-                document.getElementById('responseInfo').innerHTML = `<p class="error">حدث خطأ أثناء الاتصال بالـ API: ${error}</p>`;
-            });
+fetch("https://00acc.com/api/createInvoice", requestOptions)
+  .then((response) => {
+    // التحقق من نوع الاستجابة
+    if (!response.ok) {
+      throw new Error(`HTTP Error: ${response.status}`);
+    }
+
+    // إذا كانت الاستجابة من نوع JSON، نحاول تحويلها إلى JSON
+    const contentType = response.headers.get("Content-Type");
+    if (contentType && contentType.includes("application/json")) {
+      return response.json(); // نقوم بتحويل الاستجابة إلى JSON
+    } else {
+      return response.text(); // في حالة كانت الاستجابة نصية (أو غير JSON)
+    }
+  })
+  .then((result) => {
+    // إذا كانت الاستجابة من نوع JSON
+    if (typeof result === 'object') {
+      console.log('استجابة JSON:', result);
+      if (result.status === "done") {
+        console.log('تم إنشاء الفاتورة بنجاح. ID الفاتورة:', result.invoiceId);
+      } else {
+        console.log('حدث خطأ في إنشاء الفاتورة:', result);
+      }
+    } else {
+      // إذا كانت الاستجابة نصية
+      console.log('استجابة نصية أو HTML:', result);
+    }
+  })
+  .catch((error) => {
+    console.error('حدث خطأ أثناء الاتصال بالـ API:', error);
+  });
+
         });
     </script>
 </body>
